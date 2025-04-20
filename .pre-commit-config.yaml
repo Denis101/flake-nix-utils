@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/NixOS/nixfmt
+    # TODO: Ensure nixfmt version matches what we build in nixos modules
+    rev: v0.6.0
+    hooks:
+      - id: nixfmt
