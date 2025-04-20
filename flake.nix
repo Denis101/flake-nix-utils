@@ -5,6 +5,12 @@
     flake-schemas.url = "https://flakehub.com/f/DeterminateSystems/flake-schemas/*";
     flake-utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.*";
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2411.*";
+    flake-nix-fmt = {
+      url = "github:Denis101/flake-nix-fmt/0.0.1";
+      inputs.flake-schemas.follows = "flake-schemas";
+      inputs.flake-utils.follows = "flake-utils";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -12,29 +18,12 @@
     nixpkgs,
     flake-schemas,
     flake-utils,
+    flake-nix-fmt,
     ...
-  } @ inputs:
-    rec {
-      schemas = flake-schemas.schemas;
-      lib = import ./lib.nix inputs;
-    }
-    // flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = import nixpkgs {inherit system;};
-      fmt-check = pkgs.stdenvNoCC.mkDerivation {
-        name = "fmt-check";
-        src = ./.;
-        dontBuild = true;
-        doCheck = true;
-        nativeBuildInputs = with pkgs; [alejandra];
-        checkPhase = ''
-          alejandra -c .
-        '';
-        installPhase = ''
-          mkdir "$out"
-        '';
-      };
-    in {
-      checks = {inherit fmt-check;};
-      formatter = pkgs.alejandra;
-    });
+  } @ inputs: rec {
+    schemas = flake-schemas.schemas;
+    checks = flake-nix-fmt.checks;
+    formatter = flake-nix-fmt.formatter;
+    lib = import ./lib.nix inputs;
+  };
 }

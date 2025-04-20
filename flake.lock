@@ -1,5 +1,32 @@
 {
   "nodes": {
+    "flake-nix-fmt": {
+      "inputs": {
+        "flake-schemas": [
+          "flake-schemas"
+        ],
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1745172364,
+        "narHash": "sha256-1OYWBRxQS4RAbKpJ7ypIDAj+9LkYCNDFvZjehmRNIKY=",
+        "owner": "Denis101",
+        "repo": "flake-nix-fmt",
+        "rev": "f5be45f45525eef7849ea5509f334081ef36eb72",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Denis101",
+        "ref": "0.0.1",
+        "repo": "flake-nix-fmt",
+        "type": "github"
+      }
+    },
     "flake-schemas": {
       "locked": {
         "lastModified": 1721999734,
@@ -47,6 +74,7 @@
     },
     "root": {
       "inputs": {
+        "flake-nix-fmt": "flake-nix-fmt",
         "flake-schemas": "flake-schemas",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs"
