@@ -20,18 +20,17 @@
     }
     // flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {inherit system;};
-      files = pkgs.lib.concatStringsSep " " [
-        # TODO: Find all .sh files recursively in directory.
-      ];
-      fmt-check = pkgs.stdenv.mkDerivation {
+      fmt-check = pkgs.stdenvNoCC.mkDerivation {
         name = "fmt-check";
         src = ./.;
+        dontBuild = true;
         doCheck = true;
-        nativeBuildInputs = with pkgs; [alejandra shellcheck shfmt];
+        nativeBuildInputs = with pkgs; [alejandra];
         checkPhase = ''
-          shfmt -d -s -i 2 -ci ${files}
           alejandra -c .
-          shellcheck -x ${files}
+        '';
+        installPhase = ''
+          mkdir "$out"
         '';
       };
     in {
