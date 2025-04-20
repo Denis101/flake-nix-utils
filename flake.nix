@@ -20,7 +20,9 @@
     }
     // flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {inherit system;};
-
+      files = pkgs.lib.concatStringsSep " " [
+        # TODO: Find all .sh files recursively in directory.
+      ];
       fmt-check = pkgs.stdenv.mkDerivation {
         name = "fmt-check";
         src = ./.;
