@@ -7,24 +7,33 @@
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2411.*";
   };
 
-  outputs =
-    {
-      self,
-      nixpkgs,
-      flake-schemas,
-      ...
-    }@inputs:
+  outputs = {
+    self,
+    nixpkgs,
+    flake-schemas,
+    flake-utils,
+    ...
+  } @ inputs:
     rec {
-      inherit (self) outputs;
       schemas = flake-schemas.schemas;
       lib = import ./lib.nix inputs;
+    }
+    // flake-utils.lib.eachDefaultSystem (system: let
+      pkgs = import nixpkgs {inherit system;};
 
-      formatter = lib.forAllSystems (
-        system:
-        let
-          pkgs = import nixpkgs { inherit system; };
-        in
-        pkgs.nixfmt-rfc-style
-      );
-    };
+      fmt-check = pkgs.stdenv.mkDerivation {
+        name = "fmt-check";
+        src = ./.;
+        doCheck = true;
+        nativeBuildInputs = with pkgs; [alejandra shellcheck shfmt];
+        checkPhase = ''
+          shfmt -d -s -i 2 -ci ${files}
+          alejandra -c .
+          shellcheck -x ${files}
+        '';
+      };
+    in {
+      checks = {inherit fmt-check;};
+      formatter = pkgs.alejandra;
+    });
 }

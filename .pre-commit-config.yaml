@@ -1,6 +1,7 @@
 repos:
-  - repo: https://github.com/NixOS/nixfmt
-    # TODO: Ensure nixfmt version matches what we build in nixos modules
-    rev: v0.6.0
+  - repo: https://github.com/kamadorueda/alejandra
+    rev: v4.0.0
     hooks:
-      - id: nixfmt
+      - id: alejandra
+      - id: alejandra-nix
+      - id: alejandra-system
