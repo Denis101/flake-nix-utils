@@ -20,7 +20,7 @@
       repo = "nixpkgs";
       ref = "24.11";
     };
-    flake-nix-fmt = {
+    nix-fmt = {
       type = "github";
       owner = "Denis101";
       repo = "flake-nix-fmt";
@@ -36,12 +36,12 @@
     nixpkgs,
     flake-schemas,
     flake-utils,
-    flake-nix-fmt,
+    nix-fmt,
     ...
   } @ inputs: rec {
     schemas = flake-schemas.schemas;
-    checks = flake-nix-fmt.checks;
-    formatter = flake-nix-fmt.formatter;
+    checks = nix-fmt.checks;
+    formatter = nix-fmt.formatter;
     lib = import ./lib.nix inputs;
   };
 }
