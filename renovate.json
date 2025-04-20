@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "config:base",
+    "config:recommended"
+  ],
+  "nix": {
+    "enabled": true
+  },
+  "schedule": ["at any time"]
+}
