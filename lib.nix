@@ -1,22 +1,17 @@
 inputs: let
-  lib = inputs.nixpkgs.lib;
-  flakeUtils = inputs.flake-utils.lib;
-in
-  lib
-  // rec {
-    supportedSystems =
-      builtins.filter (
-        system: builtins.pathExists ./platform/${system}
-      )
-      flakeUtils.defaultSystems;
+  nixpkgs = inputs.nixpkgs.lib;
+  flake-utils = inputs.flake-utils.lib;
+in rec {
+    linuxSystems = builtins.filter (nixpkgs.hasSuffix "linux") flake-utils.defaultSystems;
+    darwinSystems = builtins.filter (nixpkgs.hasSuffix "darwin") flake-utils.defaultSystems;
 
     defaultFilesInDir = directory:
-      lib.pipe (lib.filesystem.listFilesRecursive directory) [
-        (builtins.filter (name: lib.hasSuffix "default.nix" name))
+      nixpkgs.pipe (nixpkgs.filesystem.listFilesRecursive directory) [
+        (builtins.filter (name: nixpkgs.hasSuffix "default.nix" name))
       ];
 
     defaultFilesAttrset = directory:
-      lib.pipe (defaultFilesInDir directory) [
+      nixpkgs.pipe (defaultFilesInDir directory) [
         (map (file: {
           name = builtins.baseNameOf (builtins.dirOf file);
           value = import file;
@@ -24,16 +19,9 @@ in
         (builtins.listToAttrs)
       ];
 
-    flattenAttrset = attrs: builtins.foldl' lib.mergeAttrs {} (builtins.attrValues attrs);
+    flattenAttrset = attrs: builtins.foldl' nixpkgs.mergeAttrs {} (builtins.attrValues attrs);
 
-    linuxSystems = builtins.filter (lib.hasSuffix "linux") supportedSystems;
-    darwinSystems = builtins.filter (lib.hasSuffix "darwin") supportedSystems;
-
-    forAllSystems = lib.genAttrs supportedSystems;
-
-    platforms = forAllSystems (system: defaultFilesAttrset ./platform/${system});
-    linuxPlatforms = lib.filterAttrs (name: value: builtins.elem name linuxSystems) platforms;
-    darwinPlatforms = lib.filterAttrs (name: value: builtins.elem name darwinSystems) platforms;
+    forAllSystems = nixpkgs.genAttrs flake-utils.defaultSystems;
 
     pkgsBySystem = forAllSystems (
       system:
@@ -42,91 +30,4 @@ in
           config.allowUnfree = true;
         }
     );
-
-    colorscheme = defaultFilesAttrset ./colorscheme;
-
-    homeModule = {
-      home-manager = {
-        sharedModules = defaultFilesInDir ./modules/home/home-manager;
-        useGlobalPkgs = lib.mkDefault true;
-        useUserPackages = lib.mkDefault true;
-      };
-    };
-
-    buildNixos = {
-      system,
-      module,
-      specialArgs,
-    }:
-      inputs.nixpkgs.lib.nixosSystem {
-        inherit specialArgs;
-        pkgs = pkgsBySystem.${system};
-        modules = [
-          inputs.home-manager.nixosModules.home-manager
-          inputs.wsl.nixosModules.wsl
-          module
-          {imports = [./modules/profile];}
-          {imports = defaultFilesInDir ./modules/system;}
-          {
-            home-manager =
-              {
-                extraSpecialArgs =
-                  {
-                    inherit colorscheme;
-                  }
-                  // specialArgs;
-              }
-              // homeModule.home-manager;
-          }
-        ];
-      };
-
-    buildDarwin = {
-      system,
-      module,
-      specialArgs,
-    }:
-      inputs.darwin.lib.darwinSystem {
-        inherit system specialArgs;
-        modules = [
-          inputs.home-manager.darwinModules.home-manager
-          inputs.mac-app-util.darwinModules.default
-          {
-            nixpkgs.pkgs = pkgsBySystem.${system};
-          }
-          module
-          {imports = [./modules/profile];}
-          {imports = defaultFilesInDir ./modules/system;}
-          {
-            home-manager =
-              {
-                extraSpecialArgs =
-                  {
-                    inherit colorscheme;
-                  }
-                  // specialArgs;
-              }
-              // homeModule.home-manager;
-          }
-        ];
-      };
-
-    buildHome = {
-      system,
-      module,
-      specialArgs,
-    }:
-      inputs.home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgsBySystem.${system};
-        modules = [
-          module
-          {imports = [./modules/profile];}
-          {imports = defaultFilesInDir ./modules/home;}
-        ];
-        extraSpecialArgs =
-          {
-            inherit colorscheme;
-          }
-          // specialArgs;
-      };
   }

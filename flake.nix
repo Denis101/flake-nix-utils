@@ -20,6 +20,13 @@
       repo = "nixpkgs";
       ref = "24.11";
     };
+    nix-unit = {
+      type = "github";
+      owner = "nix-community";
+      repo = "nix-unit";
+      ref = "v2.23.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-fmt = {
       type = "github";
       owner = "Denis101";
@@ -43,5 +50,17 @@
     checks = nix-fmt.checks;
     formatter = nix-fmt.formatter;
     lib = import ./lib.nix inputs;
+
+    tests = {
+      linuxSystems = {
+        expr = lib.linuxSystems;
+        expected = [];
+      };
+
+      darwinSystems = {
+        expr = lib.darwinSystems;
+        expected = [];
+      };
+    };
   };
 }
