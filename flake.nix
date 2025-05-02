@@ -125,12 +125,7 @@
       #   doCheck = true;
       #   nativeBuildInputs = with pkgs; [nix-unit];
       #   checkPhase = ''
-      #     export HOME="$(realpath .)"
-      #     # The nix derivation must be able to find all used inputs in the nix-store because it cannot download it during buildTime.
-      #     nix-unit --eval-store "$HOME" \
-      #       --extra-experimental-features flakes \
-      #       --override-input nixpkgs ${pkgs} \
-      #       --flake ${self}#tests
+      #     nix-unit --impure --extra-experimental-features flakes --flake ${self}#tests
       #   '';
       #   installPhase = "mkdir \"$out\"";
       # };
