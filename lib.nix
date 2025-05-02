@@ -10,6 +10,11 @@ in rec {
         (builtins.filter (name: nixpkgs.hasSuffix "default.nix" name))
       ];
 
+    fileAttrset = file: {
+      name = builtins.baseNameOf (builtins.dirOf file);
+      value = import file;
+    };
+
     defaultFilesAttrset = directory:
       nixpkgs.pipe (defaultFilesInDir directory) [
         (map (file: {

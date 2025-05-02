@@ -14,28 +14,16 @@
       repo = "flake-utils";
       ref = "refs/tags/v1.0.0";
     };
-    nixpkgs = {
-      type = "github";
-      owner = "NixOS";
-      repo = "nixpkgs";
-      ref = "24.11";
-    };
-    nix-unit = {
-      type = "github";
-      owner = "nix-community";
-      repo = "nix-unit";
-      ref = "v2.23.0";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-fmt = {
       type = "github";
       owner = "Denis101";
       repo = "flake-nix-fmt";
-      ref = "0.0.2";
+      ref = "0.0.6";
       inputs.flake-schemas.follows = "flake-schemas";
       inputs.flake-utils.follows = "flake-utils";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
 
   outputs = {
@@ -47,20 +35,115 @@
     ...
   } @ inputs: rec {
     schemas = flake-schemas.schemas;
-    checks = nix-fmt.checks;
     formatter = nix-fmt.formatter;
     lib = import ./lib.nix inputs;
 
     tests = {
-      linuxSystems = {
+      testLinuxSystems = {
         expr = lib.linuxSystems;
-        expected = [];
+        expected = ["aarch64-linux" "i686-linux" "x86_64-linux"];
       };
 
-      darwinSystems = {
+      testDarwinSystems = {
         expr = lib.darwinSystems;
-        expected = [];
+        expected = ["aarch64-darwin" "x86_64-darwin"];
+      };
+
+      testDefaultFilesInDir = {
+        expr = builtins.length (lib.defaultFilesInDir "${self}/testData");
+        expected = 2;
+      };
+
+      testDataFileAttrset = {
+        expr = lib.fileAttrset "${self}/testData/default.nix";
+        expected = {
+          name = "testData";
+          value = { a = "test"; };
+        };
+      };
+
+      testNestedFileAttrset = {
+        expr = lib.fileAttrset "${self}/testData/nested/default.nix";
+        expected = {
+          name = "nested";
+          value = { a = "nest"; };
+        };
+      };
+
+      testFlattenAttrs = {
+        expr = lib.flattenAttrset {
+          foo = { baz = { a = 1; }; };
+          bar = { bah = { b = 1; }; };
+        };
+        expected = {
+          baz = { a = 1; };
+          bah = { b = 1; };
+        };
+      };
+
+      testFlattenAttrsOverwrite = {
+        expr = lib.flattenAttrset {
+          foo = { baz = { a = 1; }; };
+          bar = { baz = { b = 2; }; };
+        };
+        expected = {
+          baz = { a = 1; };
+        };
+      };
+
+      testFlattenAttrsOverwriteReverse = {
+        expr = lib.flattenAttrset {
+          foo = { baz = { b = 2; }; };
+          bar = { baz = { a = 1; }; };
+        };
+        expected = {
+          baz = { b = 2; };
+        };
+      };
+
+      testForAllSystems = {
+        expr = lib.forAllSystems (system: { a = system; });
+        expected = {
+          aarch64-darwin = { a = "aarch64-darwin"; };
+          aarch64-linux = { a = "aarch64-linux"; };
+          i686-linux = { a = "i686-linux"; };
+          x86_64-darwin = { a = "x86_64-darwin"; };
+          x86_64-linux = { a = "x86_64-linux"; };
+        };
       };
     };
-  };
+  }
+  // flake-utils.lib.eachDefaultSystem (system: let
+    pkgs = import nixpkgs {inherit system;};
+  in {
+    checks = {
+      fmt = nix-fmt.checks.${system}.fmt;
+      # test = pkgs.stdenvNoCC.mkDerivation {
+      #   name = "test";
+      #   src = ./.;
+      #   dontBuild = true;
+      #   doCheck = true;
+      #   nativeBuildInputs = with pkgs; [nix-unit];
+      #   checkPhase = ''
+      #     export HOME="$(realpath .)"
+      #     # The nix derivation must be able to find all used inputs in the nix-store because it cannot download it during buildTime.
+      #     nix-unit --eval-store "$HOME" \
+      #       --extra-experimental-features flakes \
+      #       --override-input nixpkgs ${pkgs} \
+      #       --flake ${self}#tests
+      #   '';
+      #   installPhase = "mkdir \"$out\"";
+      # };
+    };
+
+    devShells = {
+      default = pkgs.mkShellNoCC {
+        packages = with pkgs; [alejandra nix-unit];
+      };
+
+      githubActions = pkgs.mkShellNoCC {
+        packages = with pkgs; [j2cli nix-unit];
+      };
+    };
+  });
 }
